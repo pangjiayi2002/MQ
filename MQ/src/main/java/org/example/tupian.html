@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+<div class="connect-input-box">
+    <label for="host">host:</label>
+    <input type="text" name="host" id="host" placeholder="input host" value="127.0.0.1"><br>
+    <label for="port">port:</label>
+    <input type="text" name="port" id="port" placeholder="input port" value="61614"><br>
+    <label for="clientId">client id:</label>
+    <input type="text" name="clientId" id="clientId" placeholder="input client id"><br>
+    <label for="userId">user id:</label>
+    <input type="text" name="userId" id="userId" placeholder="input user id" value="user"><br>
+    <label for="password">password:</label>
+    <input type="text" name="password" id="password" placeholder="input password" value="pass"><br>
+    <label for="destination">destination:</label>
+    <input type="text" name="destination" id="destination" placeholder="input destination" value="world"><br>
+    <button id="connect" type="submit">connect</button>
+    <button id="disconnect" type="submit">disconnect</button>
+</div>
+<div class="log-box">
+    <p id="log-show"></p>
+</div>
+<div class="send-message-box">
+    <label for="topic">topic:</label>
+    <input type="text" name="topic" id="topic"><br>
+    <label for="queue">queue:</label>
+    <input type="text" name="queue" id="queue"><br>
+    <input type="text" name="message"><br>
+    <button id="send">send</button>
+</div>
+<div class="subscribe-box">
+    <label for="subscribe-topic">subscribe-topic:</label>
+    <input type="text" name="subscribe-topic" id="subscribe-topic">
+    <button id="subscribe">subscribe</button>
+</div>
+<div class="unsubscribe-box">
+    <label for="unsubscribe-topic"></label>
+    <input type="text" name="unsubscribe-topic" id="unsubscribe-topic">
+    <button id="unsubscribe">unsubscribe</button>
+</div>
+
+<div>请上传图片</div>
+<div>
+    <input type="file" id="tupian"/>
+    <button id="tijiao">提交</button>
+</div>
+
+<script src="./jquery-1.10.2.min.js"></script>
+<script src="./mqttws31.js"></script>
+<script>
+    // // 读取本地文件并转换为 Base64 字符串
+    // function readFileAsBase64(filePath) {
+    //     return new Promise((resolve, reject) => {
+    //         // 创建一个 FileReader 对象
+    //         var reader = new FileReader();
+    //
+    //         // 读取文件完成后的回调函数
+    //         reader.onload = function(event) {
+    //             // event.target.result 包含了读取的文件内容
+    //             resolve(event.target.result);
+    //         };
+    //
+    //         // 读取文件时发生错误的回调函数
+    //         reader.onerror = function(error) {
+    //             reject(error);
+    //         };
+    //
+    //         // 以 DataURL 格式读取文件内容（将文件内容转换为 Base64 字符串）
+    //         reader.readAsDataURL(filePath);
+    //     });
+    // }
+    //
+    // 将字符串进行 URL 编码
+    // function encodeUrl(string) {
+    //     return encodeURIComponent(string);
+    // }
+    //
+    // // 例子用法
+    // var filePath = "your-local-file-path";
+    // var fileInput = document.createElement('input');
+    // fileInput.type = 'file';
+    //
+    // // 监听文件加载完成事件
+    // fileInput.addEventListener('change', function() {
+    //     var file = this.files[0];
+    //
+    //     // 读取文件并将其转换为 Base64 字符串
+    //     readFileAsBase64(file)
+    //         .then(function(base64String) {
+    //             // 对 Base64 字符串进行 URL 编码
+    //             var imgParam = encodeUrl(base64String);
+    //             console.log("Base64 字符串（已进行 URL 编码）: " + imgParam);
+    //         })
+    //         .catch(function(error) {
+    //             console.error("读取文件失败: ", error);
+    //         });
+    // });
+    //
+    // // 模拟用户选择文件
+    // fileInput.click();
+
+
+
+    // var obtn = document.getElementById("tijiao");
+    // obtn.onclick = function(){
+    //     var fileInput = document.getElementById('tupian');
+    //     var file = fileInput.files[0];
+    //
+    //     var reader = new FileReader();
+    //     reader.readAsDataURL(file); // 将文件解析成base64格式
+    //     reader.onload = function () {
+    //         //var base64Encoded = encodeURIComponent(reader.result); // 对base64字符串进行URL编码
+    //         console.log(reader.result); // 输出URL编码后的base64格式数据
+    //     };
+    // };
+
+    var obtn = document.getElementById("tijiao");
+    obtn.onclick = function(){
+        var fileInput = document.getElementById('tupian');
+        var file = fileInput.files[0];
+
+        var reader = new FileReader();
+        reader.readAsBinaryString(file); // 将文件解析为二进制文本
+        reader.onload = function () {
+            var binaryText = reader.result; // 以二进制文本形式获取文件数据
+            console.log(binaryText); // 输出二进制文本
+        };
+    };
+
+
+
+    $(() => {
+        $('input[name="clientId"]').val("example-" + Math.floor(Math.random() * 10000))
+
+        if (!window.WebSocket) {
+            console.log('不支持WebSocket')
+        } else {
+
+        }
+    })
+
+    var client, destination
+
+    $('#connect').click(() => {
+        var host = $('input[name="host"]').val()
+        var port = $('input[name="port"]').val()
+        var clientId = $('input[name="clientId"]').val()
+        var user = $('input[name="userId"]').val()
+        var password = $('input[name="password"]').val()
+
+        destination = $('input[name="destination"]').val()
+
+        // 创建一个client 实例
+        client = new Paho.MQTT.Client(host, Number(port), clientId)
+        console.log(client)
+
+        // 设置回调函数
+        client.onConnectionLost = onConnectionLost
+        client.onMessageArrived = onMessageArrived
+
+        // 连接client
+        client.connect({onSuccess: onConnect})
+    })
+
+    // 当client连接时调用
+    function onConnect() {
+        console.log('onConnect')
+        client.subscribe(destination)
+        message = new Paho.MQTT.Message("Hello")
+        message.destinationName = destination
+        client.send(message)
+    }
+
+    // 当客户端断开连接时被调用
+    function onConnectionLost(responseObject) {
+        if (responseObject.errorCode !== 0) {
+            console.log("onConnectionLost: " + responseObject.errorMessage)
+        }
+    }
+
+    // 当消息发送时调用
+    function onMessageDelivered(message) {
+        console.log('onMessageDelivered: ' + message.payloadString)
+    }
+
+    // 当消息到达时调用
+    function onMessageArrived(message) {
+        console.log("onMessageArrived:" + message.payloadString);
+    }
+
+    // 断开连接
+    $('#disconnect').click(() => {
+        console.log('disconnect');
+        client.disconnect()
+    })
+
+    // 发送消息
+    $('#send').click(() => {
+        console.log('send')
+        let topic = $('input[name="topic"]').val()
+        let payload = $('input[name="message"]').val()
+        let message = new Paho.MQTT.Message(payload)
+        message.destinationName = topic
+        client.send(message)
+        // client.send("topic", "payload", 2, false)
+    })
+
+    // 订阅主题
+    $('#subscribe').click(() => {
+        console.log('subscribe')
+        let filter = $('input[name="subscribe-topic"]').val()
+        let subscribeOptions = {
+            qos: 2,
+            invocationContext: {},
+            onSuccess: function(val) { console.log(val) },
+            onFailure: function(val) { console.log(val) },
+            timeout: 60
+        }
+        client.subscribe(filter, subscribeOptions)
+    })
+
+    // 取消订阅主题
+    $('#unsubscribe').click(() => {
+        console.log('unsubscribe')
+        let filter = $('input[name="unsubscribe-topic"]').val()
+        let subscribeOptions = {
+            invocationContext: {},
+            onSuccess: function(val) { console.log(val) },
+            onFailure: function(val) { console.log(val) },
+            timeout: 60
+        }
+        client.unsubscribe(filter, subscribeOptions)
+    })
+</script>
+</body>
+</html>
